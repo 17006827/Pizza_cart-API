@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>Pizza Cart API</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <script src="https://unpkg.com/alpinejs" defer></script>
+    <script src="https://unpkg.com/axios@1.6.7/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <script src="pizza.js"></script>
+
+
+</head>
+
+<body [x-cloak] { display: none !important; } x-data="pizzaCart">
+    <div class="container">
+        <h1 x-text="title"></h1>
+
+        <div class="cart" [x-cloak] { display: none !important; }>
+            <div>
+                <div x-data="{ open: false}" >
+                    Username: <input type="text" x-model="username">
+                    <button x-on:click="login" x-show="username">Login</button>
+                    
+                    <button x-on:click="logout" x-show="username && cartId ">Logout</button>
+                </div>
+                <div x-show="!cartId">
+                     Cart code: <span x-text="cartId"></span>
+                </div>
+               
+            </div>
+            <div [x-cloak] { display: none !important; } x-show="cartTotal > 0">
+                <h2>Your cart</h2>
+                <div x-text="message" class="message">message here</div>
+                <table>
+                    <tr>
+                        <th>Flavour</th>
+                        <th>Size</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                    </tr>
+
+                    <template x-for="pizza in cartPizzas">
+                        <tr>
+                            <td x-text="pizza.flavour"></td>
+                            <td x-text="pizza.size"></td>
+                            <td x-text="pizza.price"></td>
+                            <td>
+                                <button x-on:click="addPizzaToCart(pizza.id)">+</button>
+                                x<span x-text="pizza.qty"></span>
+                                <button x-on:click="removePizzaFromCart(pizza.id)">-</button>
+                            </td>
+                            <td x-text="pizza.total"></td>
+                        </tr>
+
+
+
+                    </template>
+
+                    <tr>
+                        <td colspan="3">Total</td>
+                        <td colspan="2" style="text-align: right;"> R <span x-text='cartTotal'></span></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3">Pay now</td>
+                        <td>
+                            <input x-model="paymentAmount" type="text">
+                        </td>
+                        <td><button x-on:click="payForCart">Pay</button></td>
+                    </tr>
+                </table>
+            </div>
+
+
+
+        </div>
+        <h2>Pizzas</h2>
+        <div class="pizzas">
+           
+           
+            <template x-for="pizza in pizzas">
+                <div class="pizza">
+                    <img src="https://thumbs.dreamstime.com/z/delicious-pizza-slices-high-angle-view-delicious-pizza-cut-slices-mozzarella-cheese-vegetables-tomato-sauce-mushrooms-273828863.jpg?ct=jpeg" alt="Medium Pizza">
+                    <h5 x-text="pizza.flavour"></h5>
+                    <span x-text="pizza.size"></span>
+                    <strong>
+                        R<span x-text="pizza.price"></span>
+                    </strong>
+                    <div>
+                        <button class="btn" x-on:click="addPizzaToCart(pizza.id)">Add to Cart</button>
+                    </div>
+                </div>
+
+            </template>
+
+        </div>
+
+    </div>
+
+
+
+</body>
+
+</html>
