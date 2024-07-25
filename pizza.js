@@ -10,14 +10,21 @@ document.addEventListener("alpine:init", () => {
             cartTotal: 0.00,
             paymentAmount: 0.00,
             message: '',
-            showPizzas: false, // Initially set to false
+            showPizzas: false,
+            cartHistory: [],
+            HistCart: true,
+            showHistoricalOrdersButton: false,
+            historicalOrders: [],
+            showHistoricalOrders: false,
+            change: 0.00,
 
             login() {
-                if (this.username.length > 2) {
+                if (this.username.length > 3) {
                     localStorage['username'] = this.username;
                     this.createCart().then(() => {
-                        this.showPizzas = true; // Show pizzas after successful login
+                        this.showPizzas = true;
                         this.loadPizzas();
+                        this.showHistoricalOrdersButton = false;
                     });
                 } else {
                     alert("Username is too short");
@@ -28,11 +35,12 @@ document.addEventListener("alpine:init", () => {
                 if (confirm('Do you want to logout?')) {
                     this.username = '';
                     this.cartId = '';
-                    localStorage['cartId'] = '';
-                    localStorage['username'] = '';
-                    // this.showPizzas = false; // Hide pizzas on logout
+                    localStorage.removeItem('cartId');
+                    localStorage.removeItem('username');
+                    this.pizzas = false;
+                    this.showPizzas = false;
+                    this.showHistoricalOrdersButton = false;
                 }
-                
             },
 
             createCart() {
@@ -64,12 +72,21 @@ document.addEventListener("alpine:init", () => {
                 axios.get('https://pizza-api.projectcodex.net/api/pizzas')
                     .then(result => {
                         this.pizzas = result.data.pizzas;
-                        this.filteredPizzas = this.pizzas; // Show all pizzas by default
+                        this.filteredPizzas = this.pizzas;
                     })
                     .catch(error => {
                         console.error('Error fetching pizzas:', error);
                     });
             },
+
+            // addfavorite(favPizzaId){
+            //     return axios.post('https://pizza-api.projectcodex.net/api/pizzas/featured', {
+            //         "username": this.username,
+            //         "pizza_id" : favPizzaId
+            //     }).then(()=>{
+            //         this.showFav();
+            //     })
+            // },
 
             addPizza(pizzaId) {
                 return axios.post('https://pizza-api.projectcodex.net/api/pizza-cart/add', {
@@ -102,11 +119,27 @@ document.addEventListener("alpine:init", () => {
                 });
             },
 
+            HistoricalCart() {
+                const historyURL = `https://pizza-api.projectcodex.net/api/pizza-cart/username/${this.username}/history`;
+                return axios.get(historyURL)
+                    .then(result => {
+                        this.cartHistory = result.data.carts;
+                        this.showHistoricalOrdersButton = true;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching cart history:', error);
+                    });
+            },
+
+            toggleHistoricalOrders() {
+                this.showHistoricalOrders = !this.showHistoricalOrders;
+            },
+
             init() {
                 const storedUsername = localStorage['username'];
                 if (storedUsername) {
                     this.username = storedUsername;
-                    this.showPizzas = true; // Show pizzas if user is already logged in
+                    this.showPizzas = true;
                     this.loadPizzas();
                 }
 
@@ -115,6 +148,11 @@ document.addEventListener("alpine:init", () => {
                         this.showCartData();
                     });
                 }
+            },
+            basil(pizzaId) {
+                this.addPizza(pizzaId).then(() => {
+                    this.showCartData();
+                });
             },
 
             addPizzaToCart(pizzaId) {
@@ -133,32 +171,51 @@ document.addEventListener("alpine:init", () => {
                 this.pay(this.paymentAmount).then(result => {
                     if (result.data.status === 'failure') {
                         this.message = result.data.message;
-                        setTimeout(() => this.message = '', 3000);
                     } else {
-                        this.message = 'Payment received';
+                        if (this.paymentAmount > this.cartTotal) {
+                            this.change = this.paymentAmount - this.cartTotal;
+                            this.message = `Payment received. Your change is R${this.change.toFixed(2)}`;
+                            this.HistoricalCart();
+                        } else {
+                            this.change = 0;
+                            this.message = 'Payment received';
+                            this.HistoricalCart();
+                        }
                         setTimeout(() => {
-                            this.message = '';
-                            this.cartPizzas = [];
-                            this.paymentAmount = 0;
-                            this.createCart();
-                            localStorage['cartId'] = '';
-                            this.cartTotal = 0.00;
-                            this.cartId = '';
+                            // this.message = '';
+                            // this.cartPizzas = [];
+                            // this.paymentAmount = 0;
+                            // this.createCart();
+                            // localStorage.removeItem('cartId');
+                            // this.cartTotal = 0.00;
+                            // this.cartId = '';
                         }, 3000);
+                        this.showHistoricalOrdersButton = true;
                     }
-                    
                 });
+            },
+
+            confirmChangeCollected() {
+                this.message = '';
+                this.change = 0;
+                this.message = '';
+                this.change = 0;
+                this.message = '';
+                this.cartPizzas = [];
+                this.paymentAmount = 0;
+                this.createCart();
+                localStorage.removeItem('cartId');
+                this.cartTotal = 0.00;
+                // this.cartId = '';    
+                // this.username = '';
+                // this.pizzas = false;
             },
 
             filterSize(size) {
                 this.filteredPizzas = this.pizzas.filter(pizza => pizza.size === size);
             },
-
-            getImageUrl(size) {
-                if (size === 'small') return 'path/to/small-pizza-image.jpg';
-                if (size === 'medium') return 'path/to/medium-pizza-image.jpg';
-                if (size === 'large') return 'path/to/large-pizza-image.jpg';
-                return 'path/to/default-pizza-image.jpg';
+            HistoryCartButton() {
+                this.HistCart = !this.HistCart;
             },
 
             increaseQuantity(pizzaId) {
@@ -168,6 +225,7 @@ document.addEventListener("alpine:init", () => {
             decreaseQuantity(pizzaId) {
                 alert(`Decrease quantity of pizza with ID: ${pizzaId}`);
             }
+
         };
     });
 });
